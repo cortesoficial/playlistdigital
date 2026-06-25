@@ -13,7 +13,6 @@
 
     <div class="max-w-6xl mx-auto space-y-4">
         
-        <!-- CABEÇALHO COM CONTROLE DE LOCUÇÃO -->
         <header class="flex flex-col sm:flex-row justify-between items-center border-b border-slate-800 pb-4 gap-4">
             <div>
                 <h1 class="text-2xl font-bold tracking-wider text-emerald-400 uppercase">PLAYLIST DIGITAL // STUDIO PRO</h1>
@@ -24,7 +23,6 @@
             </button>
         </header>
 
-        <!-- SEÇÃO: MÚSICA DE FUNDO -->
         <div class="bg-slate-800/80 p-4 rounded-xl border border-sky-700/50 shadow-xl">
             <div class="flex justify-between items-center mb-2">
                 <h2 class="text-xs font-bold text-sky-400 uppercase tracking-wide">MÚSICA DE FUNDO (TRILHA / BG MUSIC)</h2>
@@ -37,9 +35,7 @@
             <div class="hidden"><div id="yt-player-bg"></div></div>
         </div>
 
-        <!-- SEÇÃO: PLAYERS PRINCIPAIS -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- DECK A -->
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wide">PLAYER DECK A</h2>
@@ -54,7 +50,6 @@
                 </div>
             </div>
 
-            <!-- DECK B -->
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wide">PLAYER DECK B</h2>
@@ -70,7 +65,6 @@
             </div>
         </div>
 
-        <!-- STREAM DECK -->
         <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/60 shadow-xl">
             <div class="mb-3">
                 <h2 class="text-lg font-bold tracking-wide">STREAM DECK (GRAVAÇÃO AUTOMÁTICA EM NUVEM)</h2>
@@ -158,8 +152,26 @@
 
                 const novoPlayer = new YT.Player(targetId, {
                     height: '100%', width: '100%', videoId: videoId,
-                    playerVars: { 'autoplay': 1, 'enablejsapi': 1, 'origin': location.origin },
-                    events: { 'onReady': (e) => { status.textContent = "Tocando"; status.className = "text-xs text-emerald-400 font-mono"; e.target.playVideo(); } }
+                    playerVars: { 
+                        'autoplay': 0, // REGRA: Inicia pausado ao carregar
+                        'enablejsapi': 1, 
+                        'origin': location.origin 
+                    },
+                    events: { 
+                        'onReady': (e) => { 
+                            status.textContent = "Pausado / Pronto"; 
+                            status.className = "text-xs text-yellow-500 font-mono"; 
+                        },
+                        'onStateChange': (e) => {
+                            if (e.data == YT.PlayerState.PLAYING) {
+                                status.textContent = "Tocando";
+                                status.className = "text-xs text-emerald-400 font-mono";
+                            } else if (e.data == YT.PlayerState.PAUSED) {
+                                status.textContent = "Pausado";
+                                status.className = "text-xs text-yellow-500 font-mono";
+                            }
+                        }
+                    }
                 });
 
                 if (deck === 'A') playerA = novoPlayer; else playerB = novoPlayer;
@@ -184,6 +196,7 @@
         function alternarModoLocucao() {
             const btn = document.getElementById('btn-locucao');
             if (!modoLocucaoAtivo) {
+                // ATIVAR LOCUÇÃO
                 modoLocucaoAtivo = true;
                 btn.textContent = "🎤 Locução Ativa (Fundo Low)";
                 btn.className = "bg-red-600 hover:bg-red-500 text-white font-black text-sm px-6 py-3 rounded-xl uppercase tracking-widest shadow-lg transition";
@@ -191,12 +204,23 @@
                 esmaecerVolumePlayer(playerB, 15);
                 if (playerBG && typeof playerBG.playVideo === 'function') { playerBG.setVolume(20); playerBG.playVideo(); }
             } else {
+                // DESATIVAR LOCUÇÃO (RETORNA PROGRAMAÇÃO)
                 modoLocucaoAtivo = false;
                 btn.textContent = "🎤 Iniciar Locução (Fundo On)";
                 btn.className = "bg-amber-600 hover:bg-amber-500 text-slate-950 font-black text-sm px-6 py-3 rounded-xl uppercase tracking-widest shadow-lg transition";
-                esmaecerVolumePlayer(playerA, 100);
-                esmaecerVolumePlayer(playerB, 100);
+                
+                // Para a trilha de fundo
                 if (playerBG && typeof playerBG.pauseVideo === 'function') playerBG.pauseVideo();
+                
+                // REGRA: Dispara automaticamente os players principais com volume 100%
+                if (playerA && typeof playerA.playVideo === 'function') {
+                    playerA.setVolume(100);
+                    playerA.playVideo();
+                }
+                if (playerB && typeof playerB.playVideo === 'function') {
+                    playerB.setVolume(100);
+                    playerB.playVideo();
+                }
             }
         }
 
